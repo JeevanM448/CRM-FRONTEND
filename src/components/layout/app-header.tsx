@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Gem, HelpCircle, Menu, Plus, Search } from "lucide-react";
+import { Bell, HelpCircle, Menu, Plus, Search } from "lucide-react";
+import { OrganizationBrandMark } from "@/components/branding/organization-brand-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,7 +39,9 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
     getUnreadNotificationCount,
     markNotificationRead,
     markAllNotificationsRead,
+    getOrganization,
   } = useCRMStore();
+  const organization = getOrganization();
 
   const [query, setQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
@@ -65,10 +68,12 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
         </Button>
 
         <Link href="/dashboard" className="flex shrink-0 items-center gap-2 lg:hidden">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
-            <Gem className="h-4 w-4 text-brand-lime" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+            <OrganizationBrandMark variant="header" />
           </div>
-          <span className="hidden text-sm font-bold tracking-wide sm:inline">SHINY STONE</span>
+          <span className="hidden max-w-[10rem] truncate text-sm font-bold tracking-wide sm:inline">
+            {organization.settings.companyName.toUpperCase()}
+          </span>
         </Link>
 
         <div className="relative hidden max-w-md flex-1 md:block">

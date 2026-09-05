@@ -41,6 +41,7 @@ import {
   SUPPORTED_TIMEZONES,
   teamHasInactiveMembers,
 } from "@/store/organization";
+import { OrganizationLogoManager } from "@/components/organization/organization-logo-manager";
 import { validateOrganizationProfile } from "@/lib/validation";
 import type { DealStage, POStatus } from "@/types";
 
@@ -181,6 +182,7 @@ export default function OrganizationSettingsPage() {
           <CardDescription>Company identity and contact details.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
+          <OrganizationLogoManager />
           <div className="space-y-2 sm:col-span-2">
             <Label>Company Name</Label>
             <Input

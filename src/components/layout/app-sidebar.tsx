@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, Gem } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
+import { OrganizationBrandMark } from "@/components/branding/organization-brand-mark";
 import { getNavigationGroups, iconMap, type IconName } from "@/config/navigation";
 import { getPortalName } from "@/lib/auth/portals";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,7 +29,8 @@ export function AppSidebar({
   const pathname = usePathname();
   const user = useCurrentUser();
   const { can } = usePermissions();
-  const { getEmails, getUnreadNotificationCount } = useCRMStore();
+  const { getEmails, getUnreadNotificationCount, getOrganization } = useCRMStore();
+  const organization = getOrganization();
   const unreadEmails = getEmails("inbox").filter((e) => !e.read).length;
   const unreadNotifications = getUnreadNotificationCount();
   const role = user?.role ?? "viewer";
@@ -43,13 +45,15 @@ export function AppSidebar({
       )}
     >
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        <Link href="/dashboard" className="flex items-center gap-3" onClick={onNavigate}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-lime/15">
-            <Gem className="h-5 w-5 text-brand-lime" />
+        <Link href="/dashboard" className="flex min-w-0 items-center gap-2" onClick={onNavigate}>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+            <OrganizationBrandMark variant="sidebar" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-sm font-bold tracking-wide">SHINY STONE</p>
+              <p className="text-sm font-bold tracking-wide truncate">
+                {organization.settings.companyName.toUpperCase()}
+              </p>
               <p className="truncate text-[11px] text-sidebar-muted">{portalName}</p>
             </div>
           )}

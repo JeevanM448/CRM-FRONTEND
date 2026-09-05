@@ -138,7 +138,10 @@ export type AuditAction =
   | "imported"
   | "connected"
   | "disconnected"
-  | "reconnected";
+  | "reconnected"
+  | "organization_logo_uploaded"
+  | "organization_logo_updated"
+  | "organization_logo_removed";
 
 export type AuditEntityType =
   | "user"

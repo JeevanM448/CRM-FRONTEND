@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppSidebar } from "./app-sidebar";
 import { AppHeader } from "./app-header";
 import { RoleAccessGate } from "./role-access-gate";
+import { OrganizationWatermark } from "@/components/branding/organization-watermark";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { useCurrentUser } from "@/store/CRMStoreProvider";
@@ -70,8 +71,11 @@ export function AppShell({ children }: AppShellProps) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-auto p-3 sm:p-4 lg:p-6">
-          <RoleAccessGate>{children}</RoleAccessGate>
+        <main className="relative flex-1 overflow-auto p-3 sm:p-4 lg:p-6">
+          <OrganizationWatermark />
+          <div className="relative z-10">
+            <RoleAccessGate>{children}</RoleAccessGate>
+          </div>
         </main>
       </div>
     </div>

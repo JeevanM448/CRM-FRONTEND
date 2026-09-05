@@ -162,3 +162,17 @@ export function validateOrganizationProfile(data: {
   }
   return errors;
 }
+
+export function validateOrganizationLogoFile(file: File): string | null {
+  if (!file) return "A logo file is required";
+  const allowed = ["image/png", "image/jpeg", "image/webp"];
+  const mimeType = file.type.toLowerCase();
+  if (!allowed.includes(mimeType)) {
+    return "Logo must be a PNG, JPEG, or WEBP image";
+  }
+  const maxBytes = 2 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    return "Logo must be 2 MB or smaller";
+  }
+  return null;
+}

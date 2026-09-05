@@ -48,6 +48,9 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   connected: "Connected",
   disconnected: "Disconnected",
   reconnected: "Reconnected",
+  organization_logo_uploaded: "Organization Logo Uploaded",
+  organization_logo_updated: "Organization Logo Updated",
+  organization_logo_removed: "Organization Logo Removed",
 };
 
 export const AUDIT_ENTITY_LABELS: Record<AuditEntityType, string> = {
@@ -93,6 +96,9 @@ export const IMPORTANT_AUDIT_ACTIONS: AuditAction[] = [
   "password_reset_requested",
   "exported",
   "imported",
+  "organization_logo_uploaded",
+  "organization_logo_updated",
+  "organization_logo_removed",
 ];
 
 export function appendAuditLogs(current: CRMState, entries: CreateAuditLogInput[]): AuditLog[] {

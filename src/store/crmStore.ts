@@ -11,6 +11,7 @@ import {
   type RolePermissionMap,
 } from "@/lib/auth/permissions";
 import { createOrganizationStore } from "./crmStoreOrganization";
+import { clearMockLogoBlobs } from "./organizationLogo";
 import { createTargetStore } from "./crmStoreTargets";
 import { createNotificationStore } from "./crmStoreNotifications";
 import { createEmailIntegrationStore } from "./crmStoreEmailIntegrations";
@@ -442,6 +443,7 @@ export function getSnapshot(): CRMState {
 export function resetStore() {
   state = createSeedState();
   clearAllStorage();
+  clearMockLogoBlobs();
   persist(state);
   notify();
 }
@@ -2965,6 +2967,8 @@ const organizationApi = createOrganizationStore({
 export const {
   getOrganization,
   updateOrganizationProfile,
+  uploadOrganizationLogo,
+  removeOrganizationLogo,
   updateRegionalSettings,
   updateBusinessRules,
   createOrganizationTeam,

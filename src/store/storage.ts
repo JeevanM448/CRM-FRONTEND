@@ -1,5 +1,5 @@
 export const STORAGE_NAMESPACE = "shiny-stone-sales-os";
-export const STORAGE_VERSION = 16;
+export const STORAGE_VERSION = 17;
 
 export const STORAGE_KEYS = {
   version: `${STORAGE_NAMESPACE}-version`,
@@ -35,6 +35,7 @@ export const STORAGE_KEYS = {
   emailSyncRuns: `${STORAGE_NAMESPACE}-email-sync-runs`,
   rolePermissions: `${STORAGE_NAMESPACE}-role-permissions`,
   organization: `${STORAGE_NAMESPACE}-organization`,
+  organizationLogoBlobs: `${STORAGE_NAMESPACE}-organization-logo-blobs`,
   settings: `${STORAGE_NAMESPACE}-settings`,
   currentUserId: `${STORAGE_NAMESPACE}-current-user-id`,
 } as const;

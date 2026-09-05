@@ -27,6 +27,7 @@ import type {
   EmailIntegrationService,
   FollowUpService,
   NotificationService,
+  OrganizationService,
   PurchaseOrderService,
   ReportService,
   SettingsService,
@@ -68,6 +69,10 @@ export const supabaseAutomationService = stubService<AutomationService>("12", "A
 export const supabaseNotificationService = stubService<NotificationService>(
   "14",
   "NotificationService"
+);
+export const supabaseOrganizationService = stubService<OrganizationService>(
+  "4",
+  "OrganizationService"
 );
 export const supabaseUserService = stubService<UserService>("4", "UserService");
 export const supabaseSettingsService = stubService<SettingsService>("4", "SettingsService");

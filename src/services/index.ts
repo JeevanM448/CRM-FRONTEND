@@ -22,6 +22,7 @@ import type {
   EmailIntegrationService,
   FollowUpService,
   NotificationService,
+  OrganizationService,
   PurchaseOrderService,
   ReportService,
   SettingsService,
@@ -48,6 +49,7 @@ import * as emails from "./mock/emailService";
 import * as emailIntegrations from "./mock/emailIntegrationService";
 import * as followUps from "./mock/followUpService";
 import * as notifications from "./mock/notificationService";
+import * as organization from "./mock/organizationService";
 import * as purchaseOrders from "./mock/poService";
 import * as documents from "./mock/documentService";
 import * as systemHealth from "./mock/systemHealthService";
@@ -70,6 +72,7 @@ import {
   supabaseEmailIntegrationService,
   supabaseFollowUpService,
   supabaseNotificationService,
+  supabaseOrganizationService,
   supabasePurchaseOrderService,
   supabaseReportService,
   supabaseSettingsService,
@@ -243,6 +246,13 @@ export class MockNotificationService implements NotificationService {
   markAllRead = notifications.markAllRead;
 }
 
+export class MockOrganizationService implements OrganizationService {
+  getOrganization = organization.getOrganization;
+  updateOrganization = organization.updateOrganization;
+  uploadOrganizationLogo = organization.uploadOrganizationLogo;
+  removeOrganizationLogo = organization.removeOrganizationLogo;
+}
+
 export class MockUserService implements UserService {
   getUsers = users.getUsers;
   createUser = users.createUser;
@@ -263,6 +273,7 @@ const mockServices: {
   followUp: FollowUpService;
   automation: AutomationService;
   notification: NotificationService;
+  organization: OrganizationService;
   user: UserService;
   settings: SettingsService;
   dashboard: DashboardService;
@@ -286,6 +297,7 @@ const mockServices: {
   followUp: new MockFollowUpService(),
   automation: new MockAutomationService(),
   notification: new MockNotificationService(),
+  organization: new MockOrganizationService(),
   user: new MockUserService(),
   settings: new MockSettingsService(),
   dashboard: new MockDashboardService(),
@@ -311,6 +323,7 @@ const productionServices: typeof mockServices = {
   followUp: supabaseFollowUpService,
   automation: supabaseAutomationService,
   notification: supabaseNotificationService,
+  organization: supabaseOrganizationService,
   user: supabaseUserService,
   settings: supabaseSettingsService,
   dashboard: supabaseDashboardService,
@@ -341,6 +354,7 @@ export const backupService = services.backup;
 export const followUpService = services.followUp;
 export const automationService = services.automation;
 export const notificationService = services.notification;
+export const organizationService = services.organization;
 export const userService = services.user;
 export const settingsService = services.settings;
 export const dashboardService = services.dashboard;

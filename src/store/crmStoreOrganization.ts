@@ -16,6 +16,14 @@ import {
   getStageLabelMap,
 } from "./organization";
 import { generateId } from "./storage";
+import {
+  buildMockOrganizationLogoUrl,
+  buildOrganizationLogoStoragePath,
+  type OrganizationLogo,
+  removeMockLogoBlob,
+  saveMockLogoBlob,
+} from "./organizationLogo";
+import { validateOrganizationLogoFile } from "@/lib/validation";
 
 export type OrganizationStoreApi = {
   getState: () => CRMState;
@@ -438,6 +446,105 @@ export function createOrganizationStore(api: OrganizationStoreApi) {
     return updated;
   }
 
+  function uploadOrganizationLogo(
+    file: File,
+    dataUrl: string
+  ): OrganizationLogo {
+    api.requireSettingsManage();
+    const validationError = validateOrganizationLogoFile(file);
+    if (validationError) throw new Error(validationError);
+
+    const state = api.getState();
+    const organizationId = state.organization.settings.id;
+    const existing = state.organization.logo;
+    const now = new Date().toISOString();
+    const storagePath = buildOrganizationLogoStoragePath(organizationId, file.name);
+
+    if (existing?.storagePath && existing.storagePath !== storagePath) {
+      removeMockLogoBlob(existing.storagePath);
+    }
+
+    saveMockLogoBlob(storagePath, dataUrl);
+
+    const logo: OrganizationLogo = {
+      id: existing?.id ?? generateId("org-logo"),
+      organizationId,
+      fileName: file.name,
+      mimeType: file.type,
+      size: file.size,
+      storagePath,
+      url: buildMockOrganizationLogoUrl(storagePath),
+      updatedAt: now,
+    };
+
+    const action = existing ? "organization_logo_updated" : "organization_logo_uploaded";
+
+    api.setState((s) =>
+      api.withAuditEntries(
+        {
+          ...s,
+          organization: { ...s.organization, logo },
+        },
+        [
+          {
+            action,
+            entityType: "organization",
+            entityId: organizationId,
+            previousValue: existing
+              ? {
+                  fileName: existing.fileName,
+                  mimeType: existing.mimeType,
+                  size: existing.size,
+                  storagePath: existing.storagePath,
+                }
+              : undefined,
+            newValue: {
+              fileName: logo.fileName,
+              mimeType: logo.mimeType,
+              size: logo.size,
+              storagePath: logo.storagePath,
+            },
+            metadata: { section: "logo" },
+          },
+        ]
+      )
+    );
+
+    return logo;
+  }
+
+  function removeOrganizationLogo() {
+    api.requireSettingsManage();
+    const state = api.getState();
+    const existing = state.organization.logo;
+    if (!existing) return;
+
+    removeMockLogoBlob(existing.storagePath);
+
+    api.setState((s) =>
+      api.withAuditEntries(
+        {
+          ...s,
+          organization: { ...s.organization, logo: null },
+        },
+        [
+          {
+            action: "organization_logo_removed",
+            entityType: "organization",
+            entityId: s.organization.settings.id,
+            previousValue: {
+              fileName: existing.fileName,
+              mimeType: existing.mimeType,
+              size: existing.size,
+              storagePath: existing.storagePath,
+            },
+            metadata: { section: "logo" },
+          },
+        ]
+      )
+    );
+  }
+
   function getOrganizationTeams() {
     return api.getState().organization.teams;
   }
@@ -477,6 +584,8 @@ export function createOrganizationStore(api: OrganizationStoreApi) {
   return {
     getOrganization,
     updateOrganizationProfile,
+    uploadOrganizationLogo,
+    removeOrganizationLogo,
     updateRegionalSettings,
     updateBusinessRules,
     createOrganizationTeam,

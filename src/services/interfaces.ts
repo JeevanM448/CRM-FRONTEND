@@ -203,6 +203,15 @@ export interface SettingsService {
   search(query: string): Promise<SearchResult[]>;
 }
 
+export interface OrganizationService {
+  getOrganization(): Promise<import("@/store/organization").OrganizationState>;
+  updateOrganization(
+    data: Partial<import("@/store/organization").OrganizationSettings>
+  ): Promise<import("@/store/organization").OrganizationSettings>;
+  uploadOrganizationLogo(file: File): Promise<import("@/store/organizationLogo").OrganizationLogo>;
+  removeOrganizationLogo(): Promise<void>;
+}
+
 export interface DashboardService {
   getDashboardMetrics(): Promise<DashboardMetrics>;
   getManagerDashboardData(): Promise<ManagerDashboardData | null>;

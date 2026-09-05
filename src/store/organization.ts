@@ -1,4 +1,5 @@
 import type { DealStage, POStatus } from "@/types";
+import type { OrganizationLogo } from "./organizationLogo";
 
 export type OrgDateFormat = "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
 export type SupportedCurrency = "USD" | "EUR" | "GBP" | "INR" | "AED" | "SGD";
@@ -64,6 +65,7 @@ export interface POStatusConfig {
 
 export interface OrganizationState {
   settings: OrganizationSettings;
+  logo: OrganizationLogo | null;
   businessRules: BusinessRules;
   teams: OrganizationTeam[];
   regions: SalesRegion[];
@@ -153,6 +155,7 @@ export function createDefaultOrganizationState(now = new Date().toISOString()): 
       fiscalYearStartMonth: 4,
       defaultLanguage: "en",
     },
+    logo: null,
     businessRules: {
       defaultFollowUpDays: 7,
       useOrganizationCurrencyForDeals: true,
