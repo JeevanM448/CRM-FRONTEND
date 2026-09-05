@@ -1,0 +1,47 @@
+---
+description: Stable development workflow for Shiny Stone Sales OS — inspect, small changes, build, verify
+alwaysApply: true
+---
+
+# Shiny Stone Sales OS — Stable Development Workflow
+
+## Process (every task)
+
+INSPECT → PLAN → MODIFY → TEST → BUILD → VERIFY → REPORT
+
+Never make large unrelated changes at once. Modify only files required for the task.
+
+## Before editing
+
+Inspect relevant files, architecture, dependencies, and affected components. Check if the feature already exists. Do not rewrite working components.
+
+## Protected (do not change casually)
+
+- Tailwind/PostCSS setup, `globals.css`, design tokens, typography
+- Application shell, sidebar, shadcn/ui, shared UI components
+- `package.json` versions (no downgrades, major upgrades, or framework swaps without explicit reason)
+
+Prefer local component-level fixes over global CSS, root layout, or shell changes.
+
+## After significant changes
+
+1. Run `npm run build` — if FAIL, stop and fix before adding features
+2. Use one dev server: `npm run dev` or `npm run dev:clean` (never multiple instances)
+3. Verify http://localhost:3000/dashboard: CSS loads (not plain HTML), sidebar, nav, cards, no console errors
+4. Regression-test shared component changes on: `/dashboard`, `/customers`, `/deals`, `/pipeline`, `/inbox`, `/purchase-orders`, `/follow-ups`, `/automation`, `/reports`, `/settings`
+
+## Broken CSS emergency
+
+If UI shows plain HTML, blue links, default fonts — STOP feature work. Investigate CSS imports, layout, PostCSS, compilation errors, network 404 on CSS. Clear `.next` and restart with `npm run dev:clean`. See `docs/STABILITY.md`.
+
+## Before major architectural changes
+
+Create a git checkpoint commit first.
+
+## Task completion report (required)
+
+Report: TASK | FILES CHANGED | IMPLEMENTATION | TESTING | BUILD (PASS/FAIL) | BROWSER (PASS/FAIL) | REGRESSION (PASS/FAIL) | REMAINING ISSUES
+
+Do not report "Done" until build passes, browser styling works, feature works, and regressions are checked.
+
+**Stability > speed.** Never leave the app broken, unstyled, or failing build.
