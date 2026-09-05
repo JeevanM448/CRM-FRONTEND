@@ -10,6 +10,65 @@ export function validateLogin(data: { email: string; password: string }) {
   return errors;
 }
 
+const MIN_PASSWORD_LENGTH = 8;
+
+export function validatePasswordStrength(password: string) {
+  if (!password.trim()) return "Password is required";
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+  }
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+    return "Password must include letters and numbers";
+  }
+  return null;
+}
+
+export function validateChangePassword(data: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  const errors: Record<string, string> = {};
+  if (!data.currentPassword.trim()) errors.currentPassword = "Current password is required";
+  const passwordError = validatePasswordStrength(data.newPassword);
+  if (passwordError) errors.newPassword = passwordError;
+  if (!data.confirmPassword.trim()) errors.confirmPassword = "Confirm your new password";
+  else if (data.newPassword !== data.confirmPassword) {
+    errors.confirmPassword = "Passwords do not match";
+  }
+  return errors;
+}
+
+export function validateSignInAccount(data: {
+  signInEmail: string;
+  password: string;
+  confirmPassword: string;
+  accountStatus?: string;
+  isEdit?: boolean;
+}) {
+  const errors: Record<string, string> = {};
+  if (!data.signInEmail.trim()) errors.signInEmail = "Sign-in email is required";
+  else if (!isValidEmail(data.signInEmail)) errors.signInEmail = "Enter a valid email address";
+
+  const changingPassword = Boolean(data.password.trim() || data.confirmPassword.trim());
+  if (!data.isEdit || changingPassword) {
+    const passwordError = validatePasswordStrength(data.password);
+    if (passwordError) errors.password = passwordError;
+    if (!data.confirmPassword.trim()) errors.confirmPassword = "Confirm password is required";
+    else if (data.password !== data.confirmPassword) errors.confirmPassword = "Passwords do not match";
+  }
+
+  if (
+    data.accountStatus &&
+    data.accountStatus !== "active" &&
+    data.accountStatus !== "invited" &&
+    data.accountStatus !== "disabled"
+  ) {
+    errors.accountStatus = "Select a valid account status";
+  }
+  return errors;
+}
+
 export function validateCustomer(data: {
   name: string;
   contactEmail?: string;

@@ -11,6 +11,7 @@ import type {
   User,
   UserRole,
 } from "@/types";
+import type { UserAccount } from "@/types/account";
 import type { AppSettings } from "@/store/types";
 import type {
   CreateCustomerInput,
@@ -258,11 +259,29 @@ export interface AuditLogService {
 }
 
 export interface AuthService {
-  /** expectedRole is mock-portal only; production auth will not use this argument. */
+  /** expectedRole is mock-portal UX only; authorization uses the stored account role. */
   signIn(email: string, password: string, expectedRole?: UserRole): Promise<AuthSession>;
   signOut(): Promise<void>;
   getSession(): Promise<AuthSession | null>;
   getCurrentUser(): Promise<User | null>;
+  isEmailAvailable(email: string, excludeUserId?: string): Promise<boolean>;
+  getAccountForUser(userId: string): Promise<UserAccount | null>;
+  changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<void>;
+  requestPasswordReset(email: string): Promise<void>;
+  disableUserAccount(userId: string): Promise<void>;
+  enableUserAccount(userId: string): Promise<void>;
+  /** Backend-ready invitation hook — no email is sent in mock mode. */
+  prepareAccountInvitation(userId: string): Promise<{
+    queued: boolean;
+    email: string;
+    role: UserAccount["role"];
+    message: string;
+  }>;
 }
 
 export interface AIService {

@@ -19,9 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { userService } from "@/services";
+import { Separator } from "@/components/ui/separator";
+import { authService, userService } from "@/services";
 import { useCRMStore, usePermissions } from "@/store/CRMStoreProvider";
-import { validateSalesperson } from "@/lib/validation";
+import { validateSalesperson, validateSignInAccount } from "@/lib/validation";
+import type { AccountStatus } from "@/types/account";
 import type { EntityStatus, User } from "@/types";
 import { toast } from "sonner";
 
@@ -51,24 +53,36 @@ export function SalespersonFormDialog({
     team: "",
     targetAmount: 0,
     status: "active" as EntityStatus,
+    signInEmail: "",
+    password: "",
+    confirmPassword: "",
+    accountStatus: "active" as AccountStatus,
   });
 
   useEffect(() => {
     if (!open) return;
-    const currentManagers = getSalesManagers();
-    const manager = user?.managerId
-      ? currentManagers.find((item) => item.id === user.managerId)
-      : undefined;
-    setForm({
-      name: user?.name ?? "",
-      email: user?.email ?? "",
-      phone: user?.phone ?? "",
-      managerId: user?.managerId ?? "",
-      team: user?.team ?? manager?.team ?? "",
-      targetAmount: user ? (getSalespersonDetail(user.id)?.metrics.target ?? targetAmount) : 0,
-      status: user?.status === "inactive" ? "inactive" : "active",
-    });
-    setErrors({});
+    async function loadForm() {
+      const currentManagers = getSalesManagers();
+      const manager = user?.managerId
+        ? currentManagers.find((item) => item.id === user.managerId)
+        : undefined;
+      const account = user ? await authService.getAccountForUser(user.id) : null;
+      setForm({
+        name: user?.name ?? "",
+        email: user?.email ?? "",
+        phone: user?.phone ?? "",
+        managerId: user?.managerId ?? "",
+        team: user?.team ?? manager?.team ?? "",
+        targetAmount: user ? (getSalespersonDetail(user.id)?.metrics.target ?? targetAmount) : 0,
+        status: user?.status === "inactive" ? "inactive" : "active",
+        signInEmail: account?.email ?? user?.email ?? "",
+        password: "",
+        confirmPassword: "",
+        accountStatus: account?.status ?? "active",
+      });
+      setErrors({});
+    }
+    loadForm();
   }, [
     open,
     user?.id,
@@ -98,13 +112,22 @@ export function SalespersonFormDialog({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const nextErrors = validateSalesperson({
-      name: form.name,
-      email: form.email,
-      managerId: form.managerId,
-      targetAmount: form.targetAmount,
-      status: form.status,
-    });
+    const nextErrors = {
+      ...validateSalesperson({
+        name: form.name,
+        email: form.email,
+        managerId: form.managerId,
+        targetAmount: form.targetAmount,
+        status: form.status,
+      }),
+      ...validateSignInAccount({
+        signInEmail: form.signInEmail,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        accountStatus: form.accountStatus,
+        isEdit: Boolean(user),
+      }),
+    };
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
     if (!canCreateUsers && !user) {
@@ -113,6 +136,15 @@ export function SalespersonFormDialog({
     }
     if (user && !canEditUsers) {
       toast.error("Only administrators can edit salespeople");
+      return;
+    }
+
+    const emailAvailable = await authService.isEmailAvailable(form.signInEmail, user?.id);
+    if (!emailAvailable) {
+      setErrors((current) => ({
+        ...current,
+        signInEmail: "A sign-in account with this email already exists",
+      }));
       return;
     }
 
@@ -127,6 +159,9 @@ export function SalespersonFormDialog({
       team: manager?.team,
       status: form.status,
       targetAmount: form.targetAmount,
+      signInEmail: form.signInEmail.trim(),
+      accountStatus: form.accountStatus,
+      ...(form.password.trim() ? { password: form.password } : {}),
     };
 
     setLoading(true);
@@ -135,8 +170,12 @@ export function SalespersonFormDialog({
         await userService.updateUser(user.id, payload);
         toast.success("Salesperson updated");
       } else {
-        await userService.createUser(payload);
-        toast.success("Salesperson added");
+        const created = await userService.createUser({
+          ...payload,
+          password: form.password,
+        });
+        await authService.prepareAccountInvitation(created.id);
+        toast.success("Salesperson added with sign-in account");
       }
       onOpenChange(false);
     } catch (error) {
@@ -199,7 +238,7 @@ export function SalespersonFormDialog({
               {errors.targetAmount ? <p className="text-xs text-destructive">{errors.targetAmount}</p> : null}
             </div>
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label>Profile status</Label>
               <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value as EntityStatus })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -209,6 +248,66 @@ export function SalespersonFormDialog({
               </Select>
             </div>
           </div>
+
+          <Separator />
+          <div className="space-y-1">
+            <h3 className="text-sm font-medium">Sign-in account</h3>
+            <p className="text-xs text-muted-foreground">
+              Credentials the salesperson uses on the login page. Role is assigned automatically.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Sign-in email *</Label>
+            <Input
+              type="email"
+              value={form.signInEmail}
+              onChange={(e) => setForm({ ...form, signInEmail: e.target.value })}
+              autoComplete="off"
+            />
+            {errors.signInEmail ? <p className="text-xs text-destructive">{errors.signInEmail}</p> : null}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>{user ? "Set new password" : "Initial password *"}</Label>
+              <Input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                autoComplete="new-password"
+              />
+              {errors.password ? <p className="text-xs text-destructive">{errors.password}</p> : null}
+            </div>
+            <div className="space-y-2">
+              <Label>{user ? "Confirm new password" : "Confirm password *"}</Label>
+              <Input
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                autoComplete="new-password"
+              />
+              {errors.confirmPassword ? (
+                <p className="text-xs text-destructive">{errors.confirmPassword}</p>
+              ) : null}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Account status</Label>
+            <Select
+              value={form.accountStatus}
+              onValueChange={(value) => setForm({ ...form, accountStatus: value as AccountStatus })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="invited">Invited</SelectItem>
+                <SelectItem value="disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.accountStatus ? <p className="text-xs text-destructive">{errors.accountStatus}</p> : null}
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel

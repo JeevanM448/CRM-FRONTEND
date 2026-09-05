@@ -37,6 +37,12 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   deactivated: "Deactivated",
   login: "Login",
   logout: "Logout",
+  login_failed: "Login Failed",
+  account_created: "Account Created",
+  account_disabled: "Account Disabled",
+  account_enabled: "Account Enabled",
+  account_updated: "Account Updated",
+  password_reset_requested: "Password Reset Requested",
   exported: "Exported",
   imported: "Imported",
   connected: "Connected",
@@ -67,6 +73,7 @@ export const AUDIT_ENTITY_LABELS: Record<AuditEntityType, string> = {
   organization: "Organization",
   team: "Team",
   region: "Region",
+  user_account: "User Account",
 };
 
 export const IMPORTANT_AUDIT_ACTIONS: AuditAction[] = [
@@ -78,6 +85,12 @@ export const IMPORTANT_AUDIT_ACTIONS: AuditAction[] = [
   "deactivated",
   "login",
   "logout",
+  "login_failed",
+  "account_created",
+  "account_disabled",
+  "account_enabled",
+  "account_updated",
+  "password_reset_requested",
   "exported",
   "imported",
 ];

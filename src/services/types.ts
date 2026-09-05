@@ -47,8 +47,11 @@ export interface AuthSession {
   userId: string;
   email: string;
   name?: string;
-  /** Canonical UserRole from the mock user record — not a second enum. */
+  /** Canonical UserRole from the account record — not user-selected. */
   role?: UserRole;
+  organizationId?: string;
+  managerId?: string;
+  team?: string;
   accessToken?: string;
 }
 

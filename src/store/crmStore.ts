@@ -123,6 +123,18 @@ import {
   getSalespersonOwnTargetRows as buildSalespersonOwnTargetRows,
   getSalespersonOwnTargetSummary as buildSalespersonOwnTargetSummary,
 } from "./salespersonTargets";
+import { DEFAULT_ORGANIZATION_ID } from "@/types/account";
+import {
+  accountCanSignIn,
+  createUserAccountRecord,
+  getAccountByEmail,
+  getAccountByUserId,
+  getAccountRoleLabel,
+  isAccountRole,
+  isSignInEmailAvailable,
+  normalizeSignInEmail,
+} from "./accounts";
+import { mockHashPassword, verifyMockPassword } from "./mockCredentials";
 import {
   getAutomationExecutionsForUser as buildAutomationExecutionsForUser,
   getAutomationExecutionAccessStatus as buildAutomationExecutionAccessStatus,
@@ -193,6 +205,7 @@ function persist(current: CRMState) {
   saveToStorage(STORAGE_KEYS.recoveryPoints, current.recoveryPoints);
   saveToStorage(STORAGE_KEYS.backupRetentionPolicy, current.backupRetentionPolicy);
   saveToStorage(STORAGE_KEYS.users, current.users);
+  saveToStorage(STORAGE_KEYS.userAccounts, current.userAccounts);
   saveToStorage(STORAGE_KEYS.notifications, current.notifications);
   saveToStorage(STORAGE_KEYS.activities, current.activities);
   saveToStorage(STORAGE_KEYS.salesTargets, current.salesTargets);
@@ -397,6 +410,7 @@ export function initStore() {
     recoveryPoints: loadFromStorage(STORAGE_KEYS.recoveryPoints, seed.recoveryPoints),
     backupRetentionPolicy: loadFromStorage(STORAGE_KEYS.backupRetentionPolicy, seed.backupRetentionPolicy),
     users: loadFromStorage(STORAGE_KEYS.users, seed.users),
+    userAccounts: loadFromStorage(STORAGE_KEYS.userAccounts, seed.userAccounts),
     notifications: normalizeLoadedNotifications(
       loadFromStorage(STORAGE_KEYS.notifications, seed.notifications)
     ),
@@ -903,6 +917,15 @@ export function createUser(input: CreateUserInput): User {
   if (state.users.some((item) => item.email.toLowerCase() === input.email.trim().toLowerCase())) {
     throw new Error("A user with this email already exists");
   }
+  const signInEmail = normalizeSignInEmail(input.signInEmail ?? input.email);
+  if (!isSignInEmailAvailable(state, signInEmail)) {
+    throw new Error("A sign-in account with this email already exists");
+  }
+  if (isAccountRole(input.role)) {
+    if (!input.password?.trim()) {
+      throw new Error("Initial password is required for sign-in accounts");
+    }
+  }
   if (input.status !== "active" && input.status !== "inactive") {
     throw new Error("Select a valid status");
   }
@@ -931,11 +954,27 @@ export function createUser(input: CreateUserInput): User {
     status: input.status,
     lastActive: new Date().toISOString(),
   };
-  setState((s) =>
-    withAuditEntries(
+  setState((s) => {
+    const users = [...s.users, user];
+    const stateWithUser = { ...s, users };
+    const account =
+      isAccountRole(user.role) && input.password
+        ? createUserAccountRecord(stateWithUser, {
+            userId: user.id,
+            email: signInEmail,
+            password: input.password,
+            role: user.role,
+            status:
+              input.accountStatus ??
+              (user.status === "active" ? "active" : "disabled"),
+            organizationId: DEFAULT_ORGANIZATION_ID,
+          })
+        : null;
+    return withAuditEntries(
       {
         ...s,
-        users: [...s.users, user],
+        users,
+        userAccounts: account ? [...s.userAccounts, account] : s.userAccounts,
         salesTargets:
           input.role === "salesperson"
             ? upsertSalesTarget(s.salesTargets, user.id, input.targetAmount ?? 0, s)
@@ -965,9 +1004,24 @@ export function createUser(input: CreateUserInput): User {
             targetAmount: input.role === "salesperson" ? input.targetAmount ?? 0 : undefined,
           },
         },
+        ...(account
+          ? [
+              {
+                action: "account_created" as const,
+                entityType: "user_account" as const,
+                entityId: account.id,
+                newValue: {
+                  userId: account.userId,
+                  email: account.email,
+                  role: account.role,
+                  status: account.status,
+                },
+              },
+            ]
+          : []),
       ]
-    )
-  );
+    );
+  });
   return user;
 }
 
@@ -1053,14 +1107,77 @@ export function updateUser(id: string, data: Partial<CreateUserInput>): User {
       };
       return updated;
     });
+
+    let userAccounts = s.userAccounts;
+    const existingAcc = getAccountByUserId(s, id);
+    const accountAudit: CreateAuditLogInput[] = [];
+
+    if (existingAcc) {
+      let nextAcc = existingAcc;
+      const now = new Date().toISOString();
+
+      if (userFields.signInEmail !== undefined) {
+        const normalized = normalizeSignInEmail(userFields.signInEmail);
+        if (!isSignInEmailAvailable(s, normalized, existingAcc.userId)) {
+          throw new Error("An account with this sign-in email already exists.");
+        }
+        nextAcc = { ...nextAcc, email: normalized, updatedAt: now };
+      }
+
+      if (userFields.password) {
+        nextAcc = {
+          ...nextAcc,
+          mockPasswordHash: mockHashPassword(userFields.password),
+          updatedAt: now,
+        };
+      }
+
+      if (userFields.accountStatus) {
+        nextAcc = { ...nextAcc, status: userFields.accountStatus, updatedAt: now };
+      } else if (userFields.status === "inactive" && existingAcc.status !== "disabled") {
+        nextAcc = { ...nextAcc, status: "disabled", updatedAt: now };
+        accountAudit.push({
+          action: "account_disabled",
+          entityType: "user_account",
+          entityId: existingAcc.id,
+          metadata: { profileId: id, email: existingAcc.email },
+        });
+      } else if (userFields.status === "active" && existingAcc.status === "disabled") {
+        nextAcc = { ...nextAcc, status: "active", updatedAt: now };
+        accountAudit.push({
+          action: "account_enabled",
+          entityType: "user_account",
+          entityId: existingAcc.id,
+          metadata: { profileId: id, email: existingAcc.email },
+        });
+      }
+
+      if (nextAcc !== existingAcc) {
+        userAccounts = userAccounts.map((a) => (a.id === nextAcc.id ? nextAcc : a));
+        if (
+          nextAcc.email !== existingAcc.email ||
+          nextAcc.status !== existingAcc.status ||
+          (userFields.password && nextAcc.mockPasswordHash !== existingAcc.mockPasswordHash)
+        ) {
+          accountAudit.push({
+            action: "account_updated",
+            entityType: "user_account",
+            entityId: existingAcc.id,
+            metadata: { profileId: id, email: nextAcc.email },
+          });
+        }
+      }
+    }
+
     return withAuditEntries(
       {
         ...s,
         users,
+        userAccounts,
         salesTargets:
           targetAmount != null ? upsertSalesTarget(s.salesTargets, id, targetAmount, s) : s.salesTargets,
       },
-      auditEntries
+      [...auditEntries, ...accountAudit]
     );
   });
   return updated;
@@ -2632,7 +2749,198 @@ export function recordLoginAudit() {
         action: "login",
         entityType: "system",
         entityId: viewer.id,
-        metadata: { role: viewer.role },
+        metadata: { role: viewer.role, email: getAccountByUserId(s, viewer.id)?.email ?? viewer.email },
+      },
+    ])
+  );
+}
+
+function systemAuditActorId(s: CRMState): string {
+  return s.users.find((user) => user.role === "admin")?.id ?? "system";
+}
+
+function recordLoginFailedAudit(email: string, reason: string, actorId?: string) {
+  setState((s) =>
+    withAuditEntries(s, [
+      {
+        actorId: actorId ?? systemAuditActorId(s),
+        action: "login_failed",
+        entityType: "user_account",
+        entityId: email,
+        metadata: { reason },
+      },
+    ])
+  );
+}
+
+export function authenticateSignIn(
+  email: string,
+  password: string,
+  portalRole?: User["role"] | null
+) {
+  const normalizedEmail = normalizeSignInEmail(email);
+  if (!password.trim()) {
+    return { ok: false as const, error: "Password is required" };
+  }
+
+  const account = getAccountByEmail(state, normalizedEmail);
+  if (!account) {
+    recordLoginFailedAudit(normalizedEmail, "unknown_email");
+    return { ok: false as const, error: "Invalid email or password." };
+  }
+
+  if (!accountCanSignIn(account)) {
+    recordLoginFailedAudit(normalizedEmail, "account_not_active", account.userId);
+    return { ok: false as const, error: "This account is not active. Contact your administrator." };
+  }
+
+  if (!verifyMockPassword(password, account.mockPasswordHash)) {
+    recordLoginFailedAudit(normalizedEmail, "invalid_password", account.userId);
+    return { ok: false as const, error: "Invalid email or password." };
+  }
+
+  const user = getUserById(state, account.userId);
+  if (!user || user.status !== "active") {
+    recordLoginFailedAudit(normalizedEmail, "profile_inactive", account.userId);
+    return { ok: false as const, error: "This account is not active. Contact your administrator." };
+  }
+
+  if (portalRole && isAccountRole(portalRole) && portalRole !== account.role) {
+    recordLoginFailedAudit(normalizedEmail, "portal_role_mismatch", account.userId);
+    return {
+      ok: false as const,
+      error: `This account cannot sign in to the selected ${getAccountRoleLabel(portalRole)} portal. Your account role is ${getAccountRoleLabel(account.role)}.`,
+    };
+  }
+
+  const now = new Date().toISOString();
+  setState((s) => ({
+    ...s,
+    currentUserId: user.id,
+    userAccounts: s.userAccounts.map((item) =>
+      item.id === account.id ? { ...item, lastLoginAt: now, updatedAt: now } : item
+    ),
+  }));
+  recordLoginAudit();
+
+  return {
+    ok: true as const,
+    user,
+    session: {
+      userId: user.id,
+      email: account.email,
+      name: user.name,
+      role: account.role,
+      organizationId: account.organizationId,
+      managerId: user.managerId,
+      team: user.team,
+    },
+  };
+}
+
+export function getUserAccountForProfile(userId: string) {
+  return getAccountByUserId(state, userId);
+}
+
+export function checkSignInEmailAvailable(email: string, excludeUserId?: string) {
+  return isSignInEmailAvailable(state, email, excludeUserId);
+}
+
+export function changeUserAccountPassword(userId: string, newPassword: string) {
+  const viewer = getCurrentUser();
+  const account = getAccountByUserId(state, userId);
+  if (!account) throw new Error("Sign-in account not found");
+  if (viewer && viewer.role !== "admin" && viewer.id !== userId) {
+    throw new Error("You cannot change this password");
+  }
+  if (!newPassword.trim()) throw new Error("Password is required");
+
+  setState((s) =>
+    withAuditEntries(
+      {
+        ...s,
+        userAccounts: s.userAccounts.map((item) =>
+          item.id === account.id
+            ? {
+                ...item,
+                mockPasswordHash: mockHashPassword(newPassword),
+                updatedAt: new Date().toISOString(),
+              }
+            : item
+        ),
+      },
+      [
+        {
+          action: "account_updated",
+          entityType: "user_account",
+          entityId: account.id,
+          metadata: { profileId: userId, field: "password" },
+        },
+      ]
+    )
+  );
+}
+
+export function disableUserAccountByProfileId(userId: string) {
+  const account = getAccountByUserId(state, userId);
+  if (!account) throw new Error("Sign-in account not found");
+  setState((s) =>
+    withAuditEntries(
+      {
+        ...s,
+        userAccounts: s.userAccounts.map((item) =>
+          item.id === account.id
+            ? { ...item, status: "disabled", updatedAt: new Date().toISOString() }
+            : item
+        ),
+      },
+      [
+        {
+          action: "account_disabled",
+          entityType: "user_account",
+          entityId: account.id,
+          metadata: { profileId: userId, email: account.email },
+        },
+      ]
+    )
+  );
+}
+
+export function enableUserAccountByProfileId(userId: string) {
+  const account = getAccountByUserId(state, userId);
+  if (!account) throw new Error("Sign-in account not found");
+  setState((s) =>
+    withAuditEntries(
+      {
+        ...s,
+        userAccounts: s.userAccounts.map((item) =>
+          item.id === account.id
+            ? { ...item, status: "active", updatedAt: new Date().toISOString() }
+            : item
+        ),
+      },
+      [
+        {
+          action: "account_enabled",
+          entityType: "user_account",
+          entityId: account.id,
+          metadata: { profileId: userId, email: account.email },
+        },
+      ]
+    )
+  );
+}
+
+export function recordPasswordResetRequested(email: string) {
+  const normalized = normalizeSignInEmail(email);
+  setState((s) =>
+    withAuditEntries(s, [
+      {
+        actorId: systemAuditActorId(s),
+        action: "password_reset_requested",
+        entityType: "user_account",
+        entityId: normalized || "unknown",
+        metadata: { requested: true },
       },
     ])
   );

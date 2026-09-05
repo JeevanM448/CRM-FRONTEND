@@ -452,4 +452,7 @@ export type CreateUserInput = {
   phone?: string;
   status: EntityStatus;
   targetAmount?: number;
+  signInEmail?: string;
+  password?: string;
+  accountStatus?: import("@/types/account").AccountStatus;
 };

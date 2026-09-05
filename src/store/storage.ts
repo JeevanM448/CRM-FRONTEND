@@ -1,5 +1,5 @@
 export const STORAGE_NAMESPACE = "shiny-stone-sales-os";
-export const STORAGE_VERSION = 15;
+export const STORAGE_VERSION = 16;
 
 export const STORAGE_KEYS = {
   version: `${STORAGE_NAMESPACE}-version`,
@@ -24,6 +24,7 @@ export const STORAGE_KEYS = {
   recoveryPoints: `${STORAGE_NAMESPACE}-recovery-points`,
   backupRetentionPolicy: `${STORAGE_NAMESPACE}-backup-retention-policy`,
   users: `${STORAGE_NAMESPACE}-users`,
+  userAccounts: `${STORAGE_NAMESPACE}-user-accounts`,
   notifications: `${STORAGE_NAMESPACE}-notifications`,
   activities: `${STORAGE_NAMESPACE}-activities`,
   salesTargets: `${STORAGE_NAMESPACE}-sales-targets`,

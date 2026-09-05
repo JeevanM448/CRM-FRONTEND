@@ -18,6 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCRMStore, useCurrentUser, usePermissions } from "@/store/CRMStoreProvider";
+import { authService } from "@/services";
+import { validateChangePassword } from "@/lib/validation";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
@@ -48,6 +51,13 @@ export default function SettingsPage() {
     timezone: settings.timezone,
   });
   const [resetOpen, setResetOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
 
   function saveProfile() {
     toast.success("Profile saved (demo mode — persisted in session)");
@@ -74,6 +84,35 @@ export default function SettingsPage() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Demo data exported");
+  }
+
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) {
+      toast.error("You must be signed in to change your password");
+      return;
+    }
+
+    const nextErrors = validateChangePassword(passwordForm);
+    setPasswordErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    setPasswordSubmitting(true);
+    try {
+      await authService.changePassword(
+        user.id,
+        passwordForm.currentPassword,
+        passwordForm.newPassword,
+        passwordForm.confirmPassword
+      );
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordErrors({});
+      toast.success("Password updated successfully");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to change password");
+    } finally {
+      setPasswordSubmitting(false);
+    }
   }
 
   return (
@@ -183,10 +222,58 @@ export default function SettingsPage() {
 
         <TabsContent value="security">
           <Card>
-            <CardHeader><CardTitle>Security</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+              <CardDescription>Update your sign-in password. Your current password is never displayed.</CardDescription>
+            </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2"><Label>Current Password</Label><Input type="password" /></div>
-              <div className="space-y-2"><Label>New Password</Label><Input type="password" /></div>
+              <form onSubmit={handlePasswordChange} className="space-y-4" noValidate>
+                <div className="space-y-2">
+                  <Label htmlFor="current-password">Current password</Label>
+                  <Input
+                    id="current-password"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    autoComplete="current-password"
+                    aria-invalid={Boolean(passwordErrors.currentPassword)}
+                  />
+                  {passwordErrors.currentPassword ? (
+                    <p className="text-xs text-destructive">{passwordErrors.currentPassword}</p>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    autoComplete="new-password"
+                    aria-invalid={Boolean(passwordErrors.newPassword)}
+                  />
+                  {passwordErrors.newPassword ? (
+                    <p className="text-xs text-destructive">{passwordErrors.newPassword}</p>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm new password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    autoComplete="new-password"
+                    aria-invalid={Boolean(passwordErrors.confirmPassword)}
+                  />
+                  {passwordErrors.confirmPassword ? (
+                    <p className="text-xs text-destructive">{passwordErrors.confirmPassword}</p>
+                  ) : null}
+                </div>
+                <SubmitButton loading={passwordSubmitting} loadingText="Updating password...">
+                  Update password
+                </SubmitButton>
+              </form>
               <Separator />
               <div className="flex items-center justify-between">
                 <div><p className="font-medium">Two-factor authentication</p><p className="text-sm text-muted-foreground">Available in backend phase</p></div>

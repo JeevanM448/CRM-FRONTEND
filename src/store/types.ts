@@ -128,6 +128,12 @@ export type AuditAction =
   | "deactivated"
   | "login"
   | "logout"
+  | "login_failed"
+  | "account_created"
+  | "account_disabled"
+  | "account_enabled"
+  | "account_updated"
+  | "password_reset_requested"
   | "exported"
   | "imported"
   | "connected"
@@ -156,7 +162,8 @@ export type AuditEntityType =
   | "system"
   | "organization"
   | "team"
-  | "region";
+  | "region"
+  | "user_account";
 
 export type EmailProvider = "gmail" | "outlook";
 export type EmailConnectionType = "oauth";
@@ -295,6 +302,7 @@ export interface CRMState {
   recoveryPoints: RecoveryPointRecord[];
   backupRetentionPolicy: BackupRetentionPolicy;
   users: User[];
+  userAccounts: import("@/types/account").UserAccount[];
   notifications: AppNotification[];
   activities: Activity[];
   salesTargets: SalesTargetRecord[];

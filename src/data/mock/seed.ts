@@ -36,6 +36,7 @@ import { createDefaultOrganizationState } from "@/store/organization";
 import { normalizeSalesTarget } from "@/store/targets";
 import type { AppNotification, CRMState, SalesTargetRecord } from "@/store/types";
 import { defaultSettings } from "@/store/types";
+import { createSeedAccounts } from "../mock/seedAccounts";
 import { seedAuditLogs } from "../mock/auditLogs";
 import {
   mockUsers,
@@ -141,6 +142,7 @@ export const seedSalesTargets: SalesTargetRecord[] = [
 ];
 
 export function createSeedState(): CRMState {
+  const users = [...mockUsers, ...salesTeamDemoUsers];
   return {
     customers: [...mockCustomers, ...salesTeamDemoCustomers],
     contacts: [...mockContacts, ...salesTeamDemoContacts],
@@ -162,7 +164,8 @@ export function createSeedState(): CRMState {
     backups: seedBackups,
     recoveryPoints: seedRecoveryPoints,
     backupRetentionPolicy: createDefaultRetentionPolicy("user-1"),
-    users: [...mockUsers, ...salesTeamDemoUsers],
+    users,
+    userAccounts: createSeedAccounts(users),
     notifications: seedNotifications,
     activities: [...mockActivities, ...salesTeamDemoActivities],
     salesTargets: seedSalesTargets,
