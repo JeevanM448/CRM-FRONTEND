@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Mulamoottil Super Market — a homely shopping experience in Puthuppally, Kottayam since 2007.">
+  <title>Mulamoottil Super Market</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="loading-screen" role="status" aria-live="polite" aria-label="Loading">
+    <div class="loader-content">
+      <div class="loader-logo" aria-hidden="true">
+        <span class="wordmark-script">Mulamoottil</span>
+        <span class="wordmark-rule"></span>
+        <span class="wordmark-block">SUPER MARKET</span>
+      </div>
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <a class="skip-link" href="#home">Skip to content</a>
+
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="#home" class="logo" aria-label="Mulamoottil Super Market home">
+        <span class="wordmark-script">Mulamoottil</span>
+        <span class="wordmark-rule"></span>
+        <span class="wordmark-block">SUPER MARKET</span>
+      </a>
+      <button class="menu-toggle" id="mobile-menu" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Open menu">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
+      <nav>
+        <ul class="nav-menu" id="nav-menu">
+          <li><a href="#home" class="nav-link">Home</a></li>
+          <li><a href="#about" class="nav-link">About Us</a></li>
+          <li><a href="#info" class="nav-link">Info</a></li>
+          <li><a href="#contact" class="nav-link">Contact</a></li>
+          <li><a href="tel:8304844484" class="btn-primary">Call Now</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div class="hero-content">
+        <p class="eyebrow animate-up">Puthuppally · Kottayam · Since 2007</p>
+        <h1 class="animate-up delay-1">Mulamoottil Super Market</h1>
+        <h2 id="dynamic-tagline" class="hero-tagline animate-up delay-2">QUALITY, QUANTITY, CREDIBILITY</h2>
+        <p class="hero-lead animate-up delay-2">Homely Shopping Experience in Puthuppally</p>
+        <div class="hero-actions animate-up delay-3">
+          <a href="#categories" class="btn-primary">Shop by Category</a>
+          <a href="#about" class="btn-secondary">Learn More</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="categories" class="section category-section">
+      <div class="container section-header">
+        <h2>Shop by Category</h2>
+        <div class="underline"></div>
+        <p class="section-note">Tap a department to see what you will find on the floor.</p>
+      </div>
+      <div class="slider" aria-label="Store categories">
+        <div class="slide-track" id="slide-track"></div>
+      </div>
+      <div class="container">
+        <article id="department" class="department" hidden>
+          <img id="department-image" alt="">
+          <div>
+            <h3 id="department-title"></h3>
+            <p id="department-copy"></p>
+            <a class="btn-primary" href="tel:8304844484">Ask the store</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="about" class="section about-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>About Us</h2>
+          <div class="underline"></div>
+        </div>
+        <div class="about-text">
+          <p class="lead">Opened on 12 April 2007, Mulamoottil Super Market has been part of daily life in Puthuppally for 18 years.</p>
+          <p>M.K. Thomas (Pappachan Mulamoottil) founded the store. For the past three years his son, Shajan K. Thomas, has led it, keeping the same care for quality products and straightforward service.</p>
+          <p>A steady team keeps the aisles friendly and the visit unhurried. The shop is built around a homely welcome — familiar shelves, and the things a household needs close to home.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="info" class="section info-section">
+      <div class="container">
+        <div class="info-grid">
+          <article class="info-card">
+            <div class="icon-box" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.4"/></svg>
+            </div>
+            <h3>Visit Us</h3>
+            <p>Puthuppally, Kottayam, Kerala</p>
+          </article>
+          <article class="info-card">
+            <div class="icon-box" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 2"/></svg>
+            </div>
+            <h3>Working Hours</h3>
+            <p>8:30 AM – 9:00 PM</p>
+            <p class="sub-text">Open All Days</p>
+            <p class="status" id="open-status"></p>
+          </article>
+          <article class="info-card">
+            <div class="icon-box" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 3.8h3.2l1.2 3-2 1.2a12 12 0 0 0 5.6 5.6l1.2-2 3 1.2V16a2 2 0 0 1-2.2 2A15.2 15.2 0 0 1 5 6a2 2 0 0 1 2-2.2z"/></svg>
+            </div>
+            <h3>Contact Us</h3>
+            <p><a href="tel:8304844484">830 484 4484</a></p>
+            <p><a href="tel:04812354484">0481 235 4484</a></p>
+          </article>
+          <article class="info-card">
+            <div class="icon-box" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17.5" cy="17.5" r="1.6"/></svg>
+            </div>
+            <h3>Home Delivery</h3>
+            <p>10:00 AM – 5:00 PM</p>
+            <p class="sub-text">Every Day</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section contact-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Visit Our Store</h2>
+          <div class="underline"></div>
+        </div>
+        <div class="contact-wrapper">
+          <div class="contact-left-col">
+            <div class="contact-info-box">
+              <h3>Get in Touch</h3>
+              <p>Drop by the shop or call us. We are happy to help with a home delivery order.</p>
+              <ul class="contact-list">
+                <li>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
+                  <a href="mailto:mulamoottilsupermarket@gmail.com">mulamoottilsupermarket@gmail.com</a>
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6.5-5.6 6.5-10.2a6.5 6.5 0 1 0-13 0C5.5 15.4 12 21 12 21z"/><circle cx="12" cy="10.6" r="2.1"/></svg>
+                  <span>Puthuppally, Kottayam, Kerala</span>
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.8h3.2l1.2 3-2 1.2a12 12 0 0 0 5.6 5.6l1.2-2 3 1.2V16a2 2 0 0 1-2.2 2A15.2 15.2 0 0 1 5 6a2 2 0 0 1 2-2.2z"/></svg>
+                  <a href="tel:8304844484">+91 830 484 4484</a>
+                </li>
+              </ul>
+            </div>
+
+            <div class="enquiry-box">
+              <h3>Quick Enquiry</h3>
+              <form id="enquiry-form" class="enquiry-form" novalidate>
+                <div class="input-group">
+                  <label class="sr-only" for="enquiry-name">Your name</label>
+                  <input id="enquiry-name" name="name" type="text" placeholder="Your Name" autocomplete="name" required>
+                </div>
+                <div class="input-group">
+                  <label class="sr-only" for="enquiry-email">Your email</label>
+                  <input id="enquiry-email" name="email" type="email" placeholder="Your Email" autocomplete="email" required>
+                </div>
+                <div class="input-group">
+                  <label class="sr-only" for="enquiry-message">Your comment or query</label>
+                  <textarea id="enquiry-message" name="message" rows="4" placeholder="Your Comment or Query" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary full">Send Message</button>
+                <p id="form-status" class="form-status" role="status"></p>
+              </form>
+            </div>
+          </div>
+
+          <div class="contact-map">
+            <iframe
+              title="Map showing Mulamoottil Super Market in Puthuppally"
+              src="https://maps.google.com/maps?q=Mulamoottil%20Super%20Market%20Puthuppally%20Kottayam&z=15&output=embed"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Mulamoottil+Super+Market+Puthuppally+Kottayam" target="_blank" rel="noopener noreferrer">Open directions</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-content">
+      <p class="footer-logo">Mulamoottil</p>
+      <p>&copy; <span id="year"></span> Mulamoottil Super Market. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
